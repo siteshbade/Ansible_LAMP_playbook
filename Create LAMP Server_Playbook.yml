@@ -1,0 +1,47 @@
+--- # Create LAMP Server (Linux as the operating system, Apache as the Web server, MySQL as the relational database management system and PHP as the object-oriented scripting language)
+
+- hosts: webserver
+  become: yes
+  tasks:
+          - name: Install apache2
+            apt: name=apache2 state=present update_cache=yes
+
+          - name: Ensure apache started
+            action: service name=apache2 state=started enabled=yes
+
+          - name: Install MYSQL
+            apt: name={{item}} state=present update_cache=yes
+            with_items:
+                    - mysql-server
+                    - mysql-client
+                    - python-mysqldb
+
+            notify: restart apache2
+
+          - name: Install software properties-common
+            apt: name=software-properties-common
+
+          - name: "repo php"
+            apt_repository:
+                    repo="ppa:ondrej/php"
+
+          - name: update repo
+            apt: update_cache=yes
+
+          - name: install php
+            apt: name=php7.4 state=present
+
+          - name: install lamp stack
+            apt:
+                    pkg:
+                            - php7.4-mysql
+                            - php7.4-curl
+                            - libapache2-mod-php
+                            - php7.4-json
+                    state: present
+                    update_cache: yes
+
+            notify: restart apache2
+  handlers:
+          - name: restart apache2
+            service: name=apache2 state=restarted
